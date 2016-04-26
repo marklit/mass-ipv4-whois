@@ -1,0 +1,9 @@
+---
+
+- name: Install / Launch Redis
+  hosts: coordinator
+  sudo: True
+  tasks:
+    - action: apt pkg=redis-server state=installed force=yes
+
+    - shell: nohup redi-server &

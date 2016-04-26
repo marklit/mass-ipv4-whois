@@ -1,0 +1,9 @@
+---
+
+- include: tasks/hostname.yml
+- include: tasks/apt.yml
+- include: tasks/time.yml
+- include: tasks/java.yml
+- include: tasks/redis.yml
+- include: tasks/kafka.yml
+- include: tasks/app.yml

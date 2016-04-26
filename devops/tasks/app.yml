@@ -1,0 +1,29 @@
+---
+
+- name: Setup Django App Dependencies
+  hosts: all
+  sudo: True
+  tasks:
+    - action: apt pkg={{item}} state=installed force=yes
+      with_items:
+      - python-dev
+      - python-virtualenv
+      - rabbitmq-server
+      - unzip
+
+- name: Setup Django App
+  hosts: all
+  tasks:
+    - copy: src=../../app.zip dest=/home/ubuntu/
+
+    - shell: unzip -o app.zip
+      args:
+        chdir: /home/ubuntu
+
+    - pip: >
+        requirements=/home/ubuntu/requirements.txt
+        virtualenv=/home/ubuntu/.ips
+
+    - shell: bash -c "source /home/ubuntu/.ips/bin/activate && python manage.py migrate"
+      args:
+        chdir: /home/ubuntu/ips

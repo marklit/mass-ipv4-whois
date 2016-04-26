@@ -1,0 +1,38 @@
+---
+
+- name: Set timezone to UTC
+  hosts: all
+  gather_facts: False
+  sudo: True
+  tasks:
+    - name: Set timezone variables
+      copy: >
+        content='Etc/UTC'
+        dest=/etc/timezone
+        owner=root
+        group=root
+        mode=0644
+        backup=yes
+      notify:
+        - Update timezone
+  handlers:
+    - name: Update timezone
+      command: >
+        dpkg-reconfigure
+        --frontend noninteractive
+        tzdata
+
+- name: Syncronise system time
+  hosts: all
+  sudo: True
+  tasks:
+    - action: apt pkg={{item}} state=installed force=yes
+      with_items:
+      - libopts25-dev
+      - ntp
+
+    - name: copy NTP config containing European servers
+      copy: src=../configs/ntp.conf dest=/etc/ntp.conf
+
+    - name: restart NTP
+      service: name=ntp state=restarted

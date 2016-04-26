@@ -1,0 +1,25 @@
+---
+
+- name: Setup Oracle Java 7
+  hosts: coordinator
+  sudo: True
+  tasks:
+    - name: ensure required packages are installed for Java 7
+      apt: name={{item}} state=installed update_cache=yes force=yes
+      with_items:
+        - python-software-properties
+
+    - name: Add Java PPA Repo
+      action: apt_repository repo='ppa:webupd8team/java'
+
+    - name: Auto-accept license for Java
+      action: shell echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections
+
+    - name: Update APT package cache
+      action: apt update_cache=yes
+
+    - name: Install Java 7
+      action: apt pkg=oracle-java7-installer state=latest install_recommends=yes
+
+    - name: Set Java 7 Env
+      action: apt pkg=oracle-java7-set-default state=latest install_recommends=yes

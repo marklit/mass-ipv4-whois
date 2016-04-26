@@ -1,0 +1,8 @@
+---
+
+- name: Update apt cache
+  hosts: all
+  gather_facts: False
+  sudo: True
+  tasks:
+  - apt: update_cache=yes

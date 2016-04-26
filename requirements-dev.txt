@@ -1,0 +1,3 @@
+aws
+ansible
+python-keyczar

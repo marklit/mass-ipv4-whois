@@ -1,0 +1,10 @@
+django-bulk-update
+django-celery
+django-model-utils
+Django>=1.9
+ipaddr
+ipwhois
+netaddr
+pykafka
+redis
+requests

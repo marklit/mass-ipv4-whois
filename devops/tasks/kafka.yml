@@ -1,0 +1,54 @@
+---
+
+- name: Install / Launch Zookeeper
+  hosts: coordinator
+  sudo: True
+  tasks:
+    - action: apt pkg=zookeeperd state=installed force=yes
+
+    - copy: src=../configs/zookeeper dest=/etc/zookeeper/conf/environment
+
+    - service: name=zookeeper state=restarted enabled=yes
+
+- name: Install Kafka
+  hosts: coordinator
+  tasks:
+    - get_url: >
+        url=http://mirror.cc.columbia.edu/pub/software/apache/kafka/0.8.2.1/kafka_2.11-0.8.2.1.tgz
+        dest=/tmp/kafka_2.11-0.8.2.1.tgz
+
+    - shell: tar -xzf kafka_2.11-0.8.2.1.tgz
+      args:
+        chdir: /tmp
+
+    - shell: sed -i "s/#advertised\.host\.name\=<hostname routable by clients>/advertised.host.name=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)/" server.properties
+      args:
+        chdir: /tmp/kafka_2.11-0.8.2.1/config
+
+    - shell: >
+        nohup \
+        ./kafka-server-start.sh \
+        ../config/server.properties \
+        > ~/kafka-server.log 2>&1 &
+      args:
+        chdir: /tmp/kafka_2.11-0.8.2.1/bin
+
+    - shell: >
+        ./kafka-topics.sh \
+        --zookeeper 127.0.0.1:2181 \
+        --create \
+        --partitions 1 \
+        --replication-factor 1 \
+        --topic results
+      args:
+        chdir: /tmp/kafka_2.11-0.8.2.1/bin
+
+    - shell: >
+        ./kafka-topics.sh \
+        --zookeeper 127.0.0.1:2181 \
+        --create \
+        --partitions 1 \
+        --replication-factor 1 \
+        --topic metrics
+      args:
+        chdir: /tmp/kafka_2.11-0.8.2.1/bin
