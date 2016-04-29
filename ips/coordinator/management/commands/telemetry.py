@@ -3,21 +3,10 @@ from itertools import chain
 from random import randint
 from time import sleep
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from pykafka import KafkaClient
 
 from ips.config import get_config
-
-
-def save_to_redis(cidrs):
-    try:
-        redis_con = redis.StrictRedis(host=settings.REDIS_HOST,
-                                      port=settings.REDIS_PORT,
-                                      db=settings.REDIS_DB)
-        redis_con.set('cidrs', ','.join(list(cidrs)))
-    except Exception as exc:
-        print exc
 
 
 class Command(BaseCommand):
@@ -72,7 +61,7 @@ class Command(BaseCommand):
                 except (KeyError, ValueError) as exc:
                     pass
 
-            # Re-aggregate stats
+            # Aggregate telemetry
             keys = set(list(chain(*[stats[host].keys()
                                     for host in stats])))
 
