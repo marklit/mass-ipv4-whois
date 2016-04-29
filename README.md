@@ -77,8 +77,14 @@ $ python manage.py migrate
 
 The following will generate 4.7 million seed IP addresses that will be used by workers.
 
-```
+```bash
 $ python manage.py gen_ips
+```
+
+Set the coordinator IP address:
+
+```bash
+$ python manage.py set_config 127.0.0.1
 ```
 
 The following launches the web interface for the coordinator.
@@ -90,25 +96,24 @@ $ python manage.py runserver &
 The following launches the look up worker, telemetry reporting and process that collects IP addresses from the coordinator.
 
 ```bash
-$ KAFKA_HOST=127.0.0.1:9092 \
-    python manage.py celeryd \
-        --concurrency=5 &
-$ KAFKA_HOST=127.0.0.1:9092 \
-    python manage.py celerybeat &
-$ COORDINATOR_ENDPOINT=http://localhost:8000/coordinator/ \
-  HIT_ENDPOINT=http://localhost:8000/coordinator/cidr-hit/ \
-  KAFKA_HOST=127.0.0.1:9092 \
-      python manage.py get_ips_from_coordinator &
+$ python manage.py celeryd --concurrency=5 &
+$ python manage.py celerybeat &
+$ python manage.py get_ips_from_coordinator &
 ```
 
 The following launches the process that collects the WHOIS records and stores unique CIDR blocks in Redis.
 
 ```
-$ KAFKA_HOST=127.0.0.1:9092 \
-    python manage.py collect_whois &
+$ python manage.py collect_whois &
 ```
 
 ## Monitoring
+
+To see aggregated telemetry:
+
+```bash
+$ python manage.py telemetry
+```
 
 If you want to monitor celery's activity run the following:
 
