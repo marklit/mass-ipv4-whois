@@ -4,8 +4,11 @@ from urlparse import urlparse
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+import netaddr
+import redis
 import requests
 
+from ips.config import get_config
 from worker.models import IPv4Whois
 from worker.tasks import (whois_afrinic,
                           whois_apnic,
@@ -14,21 +17,16 @@ from worker.tasks import (whois_afrinic,
                           whois_ripencc)
 
 
-def in_known_cidr_block(ip):
-    try:
-        resp = requests.get('%s%s/' % (settings.HIT_ENDPOINT, ip),
-                            timeout=30)
-    except Exception as exc:
-        print exc
-        print 'Sleeping for a bit to give the coordinator a break'
-        sleep(randint(2, 5))
+def in_known_cidr_block(ip_address):
+    redis_con = redis.StrictRedis(host=settings.REDIS_HOST,
+                                  port=settings.REDIS_PORT,
+                                  db=settings.REDIS_DB)
+    cidrs = redis_con.get('cidrs')
+
+    if not cidrs or not len(cidrs):
         return False
 
-    if  resp.status_code == 200 and \
-        resp.text.strip().upper() == 'HIT':
-        return True
-
-    return False
+    return len(netaddr.all_matching_cidrs(ip_address, cidrs.split(','))) > 0
 
 
 class Command(BaseCommand):
@@ -46,8 +44,24 @@ class Command(BaseCommand):
 
         while True:
             # get 10,000 IPs from coordinator
+            coordinator_endpoint = get_config('COORDINATOR_ENDPOINT')
+
+            if not coordinator_endpoint:
+                print 'Unable to get coordinator address, will try later'
+                sleep(randint(3, 15))
+                continue
+
+            # Make sure there is a Kafka endpoint to report results back to
+            # before continuing
+            kafka_host = get_config('KAFKA_HOST')
+
+            if not kafka_host:
+                print 'No Kafka host to report back to, will try later'
+                sleep(randint(3, 15))
+                continue
+
             try:
-                resp = requests.get(settings.COORDINATOR_ENDPOINT, timeout=120)
+                resp = requests.get(coordinator_endpoint, timeout=120)
             except Exception as exc:
                 print exc
                 print 'Sleeping for a bit to give the coordinator a break'
@@ -56,12 +70,14 @@ class Command(BaseCommand):
 
             if resp.status_code != 200:
                 # Coordinator might no be up, try later.
+                print 'Got non-HTTP 200 back from coordinator, will try later'
                 sleep(5)
                 continue
 
             if resp.text.strip().upper() == 'END':
                 # No more IPs to work with or the list hasn't finished
                 # generating yet
+                print 'No more IPs from coordinator, will check back later'
                 sleep(30)
                 continue
 

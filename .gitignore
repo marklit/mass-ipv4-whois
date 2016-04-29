@@ -1,10 +1,12 @@
 *.rdb
+*.gz
 *.zip
 *.retry
 celerybeat-schedule
 *.pid
 *.sqlite3
 *.py,cover
+devops/inventory
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

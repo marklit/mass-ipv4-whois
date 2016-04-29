@@ -24,6 +24,48 @@
         requirements=/home/ubuntu/requirements.txt
         virtualenv=/home/ubuntu/.ips
 
+    - name: Copy over virtual environment wrapper
+      template: >
+        src=../configs/venv
+        dest=/home/ubuntu/.ips/bin/exec
+        mode=755
+        owner=ubuntu
+        group=ubuntu
+
     - shell: bash -c "source /home/ubuntu/.ips/bin/activate && python manage.py migrate"
       args:
         chdir: /home/ubuntu/ips
+
+- name: Setup Supervisor
+  hosts: worker
+  sudo: True
+  tasks:
+    - action: apt pkg=supervisor state=installed force=yes
+
+    - template: >
+        src=../configs/worker.supervisor.conf
+        dest=/etc/supervisor/conf.d/worker.conf
+        owner=root
+        group=root
+        mode=644
+
+    - template: >
+        src=../configs/supervisord.conf
+        dest=/etc/supervisor/supervisord.conf
+        owner=root
+        group=root
+        mode=644
+
+    - name: Allow the ubuntu user to restart supervisor
+      action: >
+        lineinfile
+        dest=/etc/sudoers
+        regexp="^ubuntu"
+        line="ubuntu ALL = (root) NOPASSWD:/usr/bin/supervisorctl restart all"
+        state=present
+
+    - name: Start Supervisor
+      service: name=supervisor state=started enabled=yes
+
+    - name: Reload Supervisor's configuration
+      shell: /usr/bin/supervisorctl reload

@@ -117,17 +117,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# If this project is run as a worker the following will be needed but if it's
-# the Coordinator itself then it can be left blank.
-COORDINATOR_ENDPOINT = os.environ.get('COORDINATOR_ENDPOINT', '')
-HIT_ENDPOINT = os.environ.get('HIT_ENDPOINT', '')
-
 djcelery.setup_loader()
-
-# The worker nodes need this set, the coordinator will only need it when
-# inspecting results but not for other operations so it doesn't always need to
-# be set.
-KAFKA_HOST = os.environ.get('KAFKA_HOST', '')
 
 # From http://stackoverflow.com/a/1267524
 EXTERNAL_IP = [(s.connect(('8.8.8.8', 53)),

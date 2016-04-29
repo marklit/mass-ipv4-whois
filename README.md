@@ -143,24 +143,6 @@ $ kafka-console-consumer.sh \
     --from-beginning
 ```
 
-To see if an IP hits a CIDR already recorded:
-
-```
-$ curl localhost:8000/coordinator/cidr-hit/1.2.3.4/
-```
-
-The result will be either:
-
-```
-HIT
-```
-
-or
-
-```
-MISS
-```
-
 ## Deployment
 
 To run Ansible on a cloud service you first need to create an inventory file like the following.
@@ -177,4 +159,18 @@ coord1 ansible_host=x.x.x.x ansible_user=ubuntu ansible_private_key_file=~/.ssh/
 worker1 ansible_host=x.x.x.x ansible_user=ubuntu ansible_private_key_file=~/.ssh/ec2.pem
 worker2 ansible_host=x.x.x.x ansible_user=ubuntu ansible_private_key_file=~/.ssh/ec2.pem
 worker3 ansible_host=x.x.x.x ansible_user=ubuntu ansible_private_key_file=~/.ssh/ec2.pem
+```
+
+To provision and deploy run:
+
+```bash
+$ zip -r \
+    app.zip \
+    ips/ *.txt \
+    -x *.sqlite3 \
+    -x *.pid \
+    -x *.pyc
+
+$ cd devops
+$ ansible-playbook bootstrap.yml
 ```

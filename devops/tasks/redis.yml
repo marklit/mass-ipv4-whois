@@ -1,9 +1,16 @@
 ---
 
 - name: Install / Launch Redis
-  hosts: coordinator
+  hosts: all
   sudo: True
   tasks:
     - action: apt pkg=redis-server state=installed force=yes
 
-    - shell: nohup redi-server &
+    - template: >
+        src=../configs/redis.conf
+        dest=/etc/redis/redis.conf
+        owner=root
+        group=root
+        mode=644
+
+    - service: name=redis-server state=restarted enabled=yes

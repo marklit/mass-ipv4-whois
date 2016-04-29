@@ -1,0 +1,3 @@
+#!/bin/bash
+source /home/ubuntu/.ips/bin/activate
+$@

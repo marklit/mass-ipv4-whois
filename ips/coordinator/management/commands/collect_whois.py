@@ -1,9 +1,13 @@
 import json
+from random import randint
+from time import sleep
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from pykafka import KafkaClient
 import redis
+
+from ips.config import get_config
 
 
 def save_to_redis(cidrs):
@@ -20,7 +24,16 @@ class Command(BaseCommand):
     help = 'Collect WHOIS results from Kafka'
 
     def handle(self, *args, **options):
-        client = KafkaClient(hosts=settings.KAFKA_HOST)
+        kafka_host = None
+
+        while not kafka_host:
+            kafka_host = get_config('KAFKA_HOST')
+
+            if not kafka_host:
+                print 'Unable to get Kafka host address, will try again.'
+                sleep(randint(2, 5))
+
+        client = KafkaClient(hosts=kafka_host)
         topic = client.topics['results']
 
         consumer = topic.get_simple_consumer()

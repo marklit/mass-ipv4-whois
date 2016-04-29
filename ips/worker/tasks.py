@@ -8,11 +8,17 @@ from django.db.models import Count
 from ipwhois import IPWhois
 from pykafka import KafkaClient
 
+from ips.config import get_config
 from worker.models import IPv4Whois
 
 
 def send_to_kafka(topic_name, msg):
-    client = KafkaClient(hosts=settings.KAFKA_HOST)
+    kafka_host = get_config('KAFKA_HOST')
+
+    if not kafka_host:
+        raise Exception('Unable to get Kafka host address')
+
+    client = KafkaClient(hosts=kafka_host)
     topic = client.topics[topic_name]
 
     with topic.get_producer(delivery_reports=True) as producer:
@@ -56,7 +62,13 @@ def _whois(ip_pk):
       timeout=10,
       rate_limit='10/s')
 def whois_arin(ip_pk, *args, **kwargs):
-    _whois(ip_pk)
+    try:
+        _whois(ip_pk)
+    except Exception as exception:
+        print exception
+        raise whois_arin.retry(args=[ip_pk],
+                               exc=exception,
+                               kwargs=kwargs)
 
 
 @task(default_retry_delay=600,
@@ -64,7 +76,13 @@ def whois_arin(ip_pk, *args, **kwargs):
       timeout=10,
       rate_limit='10/s')
 def whois_ripencc(ip_pk, *args, **kwargs):
-    _whois(ip_pk)
+    try:
+        _whois(ip_pk)
+    except Exception as exception:
+        print exception
+        raise whois_ripencc.retry(args=[ip_pk],
+                                  exc=exception,
+                                  kwargs=kwargs)
 
 
 @task(default_retry_delay=600,
@@ -72,7 +90,13 @@ def whois_ripencc(ip_pk, *args, **kwargs):
       timeout=10,
       rate_limit='10/s')
 def whois_apnic(ip_pk, *args, **kwargs):
-    _whois(ip_pk)
+    try:
+        _whois(ip_pk)
+    except Exception as exception:
+        print exception
+        raise whois_apnic.retry(args=[ip_pk],
+                                exc=exception,
+                                kwargs=kwargs)
 
 
 @task(default_retry_delay=600,
@@ -80,7 +104,13 @@ def whois_apnic(ip_pk, *args, **kwargs):
       timeout=10,
       rate_limit='1/s')
 def whois_lacnic(ip_pk, *args, **kwargs):
-    _whois(ip_pk)
+    try:
+        _whois(ip_pk)
+    except Exception as exception:
+        print exception
+        raise whois_lacnic.retry(args=[ip_pk],
+                                 exc=exception,
+                                 kwargs=kwargs)
 
 
 @task(default_retry_delay=600,
@@ -88,7 +118,13 @@ def whois_lacnic(ip_pk, *args, **kwargs):
       timeout=10,
       rate_limit='1/s')
 def whois_afrinic(ip_pk, *args, **kwargs):
-    _whois(ip_pk)
+    try:
+        _whois(ip_pk)
+    except Exception as exception:
+        print exception
+        raise whois_afrinic.retry(args=[ip_pk],
+                                  exc=exception,
+                                  kwargs=kwargs)
 
 
 @periodic_task(run_every=crontab(minute="*/1"),
